@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pingr - Create Account</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/bcryptjs@2.4.3/dist/bcrypt.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--purple:#7C3AED;--blue:#3B82F6;--grad:linear-gradient(135deg,#7C3AED 0%,#3B82F6 100%);--muted:#8B8BA3;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent!important;-webkit-touch-callout:none!important;-webkit-user-select:none!important;user-select:none!important}
+input,textarea{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:text!important}
+body{min-height:100vh;display:flex;justify-content:center;overflow-x:hidden;background: radial-gradient(120% 120% at 0% 0%, #C4B5FD 0%, transparent 50%), radial-gradient(100% 100% at 100% 0%, #93C5FD 0%, transparent 50%), linear-gradient(180deg, #F8F7FF 0%, #FFFFFF 100%);background-attachment:fixed}
+.app{width:100%;max-width:480px;min-height:100vh;background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,247,255,0.92) 50%, rgba(255,255,255,0.9) 100%);backdrop-filter:blur(20px);display:flex;flex-direction:column;box-shadow:0 0 80px rgba(124,58,237,.08)}
+#iphone-toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-160%);z-index:9999;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.78);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);border:1px solid rgba(255,255,255,0.8);border-radius:20px;padding:12px 16px;box-shadow:0 12px 40px rgba(0,0,0,.12);font-size:13.5px;font-weight:600;color:#1a1a1a;transition:transform.7s cubic-bezier(0.32,0.72,0,1);pointer-events:none;white-space:nowrap;min-width:200px;max-width:92%}
+#iphone-toast.show{transform:translateX(-50%) translateY(0)}
+.header{padding:32px 24px 10px;text-align:center}
+.logo{width:56px;height:56px;background:var(--grad);border-radius:18px;display:inline-grid;place-items:center;color:white;font-weight:800;font-size:26px;box-shadow:0 10px 24px rgba(124,58,237,.25)}
+.header h1{margin-top:14px;font-size:22px;font-weight:700}
+.header p{color:var(--muted);font-size:14px;margin-top:6px}
+.form-wrap{padding:20px 24px 100px;flex:1;transition:all.4s ease}
+.form-wrap.locked{filter:blur(10px);pointer-events:none;opacity:.6}
+.field{margin-bottom:16px;position:relative}
+.label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;letter-spacing:.5px;text-transform:uppercase}
+.input-box{position:relative;display:flex;align-items:center}
+.p-input{width:100%;padding:16px 18px;background:rgba(244,242,255,0.9);border:1.6px solid transparent;border-radius:var(--r);font-size:15px;outline:none;transition:.2s}
+.p-input.with-prefix{padding-left:42px}
+.p-input:focus{background:white;border-color:#A78BFA;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+.p-input.error{border-color:#EF4444;background:#FFF5F5}
+.p-input.ok{border-color:#10B981}
+.err{font-size:12px;color:#EF4444;margin-top:6px;display:none}
+.err.show{display:block}
+.ok-msg{font-size:12px;color:#10B981;margin-top:6px;display:none}
+.ok-msg.show{display:block}
+.info-msg{font-size:12px;color:var(--purple);margin-top:6px;display:none;font-weight:600}
+.info-msg.show{display:block}
+.eye{position:absolute;right:14px;cursor:pointer;color:var(--muted)}
+.row{display:flex;gap:12px}
+.row>.field{flex:1}
+.country-name{font-size:13px;color:var(--purple);margin-top:6px;font-weight:600;display:none;background:rgba(124,58,237,.08);padding:6px 12px;border-radius:999px;width:fit-content}
+.country-name.show{display:flex}
+.terms{display:flex;gap:10px;align-items:flex-start;margin:20px 0;font-size:13px;color:var(--muted)}
+.terms input{margin-top:2px;accent-color:var(--purple)}
+.terms a{color:var(--purple);font-weight:600;text-decoration:none}
+.btn{width:100%;padding:17px;background:var(--grad);color:white;border:none;border-radius:999px;font-weight:600;font-size:15px;box-shadow:0 8px 20px rgba(124,58,237,.25);transition:.2s;opacity:.4;pointer-events:none}
+.btn.active{opacity:1;pointer-events:auto}
+.btn:active{transform:scale(.97)}
+.btn.loading{opacity:.7;pointer-events:none}
+.login-link{text-align:center;margin-top:18px;font-size:14px;color:var(--muted)}
+.login-link a{color:var(--purple);font-weight:600;text-decoration:none}
+.bouncy{display:flex;gap:3px;align-items:center}
+.bouncy span{width:5px;height:5px;background:#7C3AED;border-radius:50%;animation:bounce 1s infinite}
+.bouncy span:nth-child(2){animation-delay:.15s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.6}40%{transform:translateY(-5px);opacity:1}}
+
+/* === POPUP 100% FIXED - THIS IS THE KEY FIX === */
+.popup{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;background:rgba(0,0,0,0);transition:all.35s ease}
+.popup.show{opacity:1;pointer-events:auto;background:rgba(0,0,0,0.25)}
+.popup-card{width:100%;max-width:480px;background:rgba(255,255,255,0.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:1px solid rgba(255,255,255,0.8);border-bottom:none;border-radius:38px 38px 0 0;padding:14px 24px 40px;transform:translateY(100%);transition:transform.55s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -20px 60px rgba(0,0,0,.18)}
+.popup.show.popup-card{transform:translateY(0)} /* FIXED WITH SPACE */
+
+#agePopup.popup-card{background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(238,232,255,0.98) 100%)}
+#resumePopup.show{background:rgba(20,10,50,.18);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%)}
+.handle{width:40px;height:5px;background:rgba(0,0,0,.18);border-radius:999px;margin:0 auto 22px}
+.count{font-size:12px;color:#8B8BA3;margin-top:10px;font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+<div id="iphone-toast"><div style="width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(124,58,237,.12);color:var(--purple)"><span id="toastIcon" class="material-icons-round" style="font-size:18px">info</span></div><span id="toast-text"></span></div>
+<div class="app">
+  <div class="header"><div class="logo">P</div><h1>Create account</h1><p>Welcome to Pingr</p></div>
+  <div id="formWrap" class="form-wrap">
+    <div class="field"><label class="label">First Name</label><input id="firstName" class="p-input" placeholder="John"><div id="e-firstName" class="err"></div></div>
+    <div class="field"><label class="label">Last Name</label><input id="lastName" class="p-input" placeholder="Doe"><div id="e-lastName" class="err"></div></div>
+    <div class="field"><label class="label">Username</label><div class="input-box"><span style="position:absolute;left:16px;color:#8B8BA3">@</span><input id="username" class="p-input" style="padding-left:34px" placeholder="johndoe"><span id="u-check" style="position:absolute;right:14px;display:flex;align-items:center"></span></div><div id="e-username" class="err"></div><div id="ok-username" class="ok-msg">Username available</div></div>
+    <div class="row">
+      <div class="field"><label class="label">Country Code</label><div class="input-box"><span style="position:absolute;left:12px;font-weight:700">+</span><input id="countryCode" class="p-input with-prefix" placeholder="234" inputmode="numeric"></div><div id="countryName" class="country-name"></div><div id="e-countryCode" class="err"></div></div>
+      <div class="field"><label class="label">Phone Number</label><input id="phone" class="p-input" placeholder="8012345678" inputmode="numeric"><div id="e-phone" class="err"></div></div>
+    </div>
+    <div class="field"><label class="label">Email Address</label><input id="email" class="p-input" placeholder="john@example.com" type="email"><div id="e-email" class="err"></div><div id="i-email" class="info-msg">Unverified account found</div></div>
+    <div class="field"><label class="label">Password</label><div class="input-box"><input id="password" class="p-input" placeholder="Min 8 characters" type="password"><span class="material-icons-round eye" onclick="togglePass('password',this)">visibility_off</span></div><div id="e-password" class="err"></div></div>
+    <div class="field"><label class="label">Confirm Password</label><div class="input-box"><input id="cpassword" class="p-input" placeholder="Repeat password" type="password"><span class="material-icons-round eye" onclick="togglePass('cpassword',this)">visibility_off</span></div><div id="e-cpassword" class="err"></div></div>
+    <div class="field"><label class="label">Date of Birth</label><input id="dob" class="p-input" type="date"><div id="e-dob" class="err"></div></div>
+    <div class="terms"><input id="terms" type="checkbox"><label for="terms">I agree to <a>Terms</a> & <a>Privacy Policy</a></label></div>
+    <button id="signupBtn" class="btn">Create Account</button>
+    <div class="login-link">Already have an account? <a href="login.html">Login</a></div>
+  </div>
+</div>
+
+<div id="agePopup" class="popup" onclick="if(event.target.id==='agePopup')closePop('agePopup')">
+  <div class="popup-card">
+    <div class="handle"></div>
+    <div style="text-align:center">
+      <div style="width:72px;height:72px;background:linear-gradient(135deg, rgba(124,58,237,0.15), rgba(59,130,246,0.15));border-radius:22px;display:inline-grid;place-items:center;border:1px solid rgba(124,58,237,0.2)"><span class="material-icons-round" style="color:#EF4444;font-size:32px">block</span></div>
+      <h3 style="margin:18px 0 8px;font-size:21px;font-weight:800">Age Restriction</h3>
+      <p style="font-size:14px;color:#6B7280;line-height:1.6">You must be at least 14 years old to use Pingr.</p>
+      <button onclick="closePop('agePopup')" class="btn active" style="margin-top:26px">Okay, Got it</button>
+    </div>
+  </div>
+</div>
+
+<div id="resumePopup" class="popup">
+  <div class="popup-card"><div class="handle"></div>
+    <div style="text-align:center">
+      <div style="width:64px;height:64px;background:rgba(124,58,237,0.1);border-radius:20px;display:inline-grid;place-items:center"><span class="material-icons-round" style="color:#7C3AED;font-size:28px">restart_alt</span></div>
+      <h3 style="margin:16px 0 8px;font-size:20px;font-weight:700">Resuming Registration</h3>
+      <p id="resumeText" style="font-size:14px;color:#6B7280;line-height:1.5">We found an unverified account. Redirecting to verification.</p>
+      <button id="resumeBtn" class="btn active" style="margin-top:24px">Continue to OTP</button>
+      <div id="resumeCount" class="count">Auto-redirecting in 3s...</div>
+      <button onclick="unlockForm()" style="margin-top:10px;background:none;border:none;color:#8B8BA3;font-weight:600;font-size:14px;width:100%;padding:8px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const supabaseClient = supabase.createClient(PINGR_CONFIG.SUPABASE_URL, PINGR_CONFIG.SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+const state = { firstName:false, lastName:false, username:false, countryCode:false, phone:false, email:false, password:false, cpassword:false, dob:false, terms:false, usernameFree:false, phoneFree:false, emailFree:false, resumeEmail:'' };
+const COUNTRY_MAP = {"1":"USA / Canada","7":"Russia","20":"Egypt","27":"South Africa","30":"Greece","31":"Netherlands","32":"Belgium","33":"France","34":"Spain","36":"Hungary","39":"Italy","40":"Romania","41":"Switzerland","43":"Austria","44":"United Kingdom","45":"Denmark","46":"Sweden","47":"Norway","48":"Poland","49":"Germany","51":"Peru","52":"Mexico","53":"Cuba","54":"Argentina","55":"Brazil","56":"Chile","57":"Colombia","58":"Venezuela","60":"Malaysia","61":"Australia","62":"Indonesia","63":"Philippines","64":"New Zealand","65":"Singapore","66":"Thailand","81":"Japan","82":"South Korea","84":"Vietnam","86":"China","90":"Turkey","91":"India","92":"Pakistan","93":"Afghanistan","94":"Sri Lanka","95":"Myanmar","98":"Iran","212":"Morocco","213":"Algeria","216":"Tunisia","218":"Libya","220":"Gambia","221":"Senegal","222":"Mauritania","223":"Mali","224":"Guinea","225":"Ivory Coast","226":"Burkina Faso","227":"Niger","228":"Togo","229":"Benin","230":"Mauritius","231":"Liberia","232":"Sierra Leone","233":"Ghana","234":"Nigeria","235":"Chad","236":"Central African Republic","237":"Cameroon","238":"Cape Verde","239":"Sao Tome and Principe","240":"Equatorial Guinea","241":"Gabon","242":"Congo","243":"DR Congo","244":"Angola","245":"Guinea-Bissau","248":"Seychelles","249":"Sudan","250":"Rwanda","251":"Ethiopia","252":"Somalia","253":"Djibouti","254":"Kenya","255":"Tanzania","256":"Uganda","257":"Burundi","258":"Mozambique","260":"Zambia","261":"Madagascar","262":"Reunion","263":"Zimbabwe","264":"Namibia","265":"Malawi","266":"Lesotho","267":"Botswana","268":"Eswatini","269":"Comoros","290":"Saint Helena","291":"Eritrea","297":"Aruba","298":"Faroe Islands","299":"Greenland","350":"Gibraltar","351":"Portugal","352":"Luxembourg","353":"Ireland","354":"Iceland","355":"Albania","356":"Malta","357":"Cyprus","358":"Finland","359":"Bulgaria","370":"Lithuania","371":"Latvia","372":"Estonia","373":"Moldova","374":"Armenia","375":"Belarus","376":"Andorra","377":"Monaco","378":"San Marino","380":"Ukraine","381":"Serbia","382":"Montenegro","383":"Kosovo","385":"Croatia","386":"Slovenia","387":"Bosnia and Herzegovina","389":"North Macedonia","420":"Czech Republic","421":"Slovakia","423":"Liechtenstein","500":"Falkland Islands","501":"Belize","502":"Guatemala","503":"El Salvador","504":"Honduras","505":"Nicaragua","506":"Costa Rica","507":"Panama","509":"Haiti","590":"Guadeloupe","591":"Bolivia","592":"Guyana","593":"Ecuador","594":"French Guiana","595":"Paraguay","596":"Martinique","597":"Suriname","598":"Uruguay","599":"Curacao","670":"East Timor","672":"Australia","673":"Brunei","674":"Nauru","675":"Papua New Guinea","676":"Tonga","677":"Solomon Islands","678":"Vanuatu","679":"Fiji","680":"Palau","681":"Wallis and Futuna","682":"Cook Islands","683":"Niue","685":"Samoa","686":"Kiribati","687":"New Caledonia","688":"Tuvalu","689":"French Polynesia","690":"Tokelau","691":"Micronesia","692":"Marshall Islands","850":"North Korea","852":"Hong Kong","853":"Macao","855":"Cambodia","856":"Laos","880":"Bangladesh","886":"Taiwan","960":"Maldives","961":"Lebanon","962":"Jordan","963":"Syria","964":"Iraq","965":"Kuwait","966":"Saudi Arabia","967":"Yemen","968":"Oman","970":"Palestine","971":"UAE","972":"Israel","973":"Bahrain","974":"Qatar","975":"Bhutan","976":"Mongolia","977":"Nepal","992":"Tajikistan","993":"Turkmenistan","994":"Azerbaijan","995":"Georgia","996":"Kyrgyzstan","998":"Uzbekistan"};
+
+function toast(msg,type='info'){ const t=$('iphone-toast'), txt=$('toast-text'), ic=$('toastIcon'); txt.textContent=msg; t.className=''; t.classList.add(type); ic.textContent = type==='error'?'error':type==='success'?'check_circle':'info'; t.classList.add('show'); if(navigator.vibrate) navigator.vibrate(10); setTimeout(()=>t.classList.remove('show'), 3200); }
+function togglePass(id, el){ const inp=$(id); inp.type=inp.type==='password'?'text':'password'; el.textContent=inp.type==='password'?'visibility_off':'visibility'; }
+function closePop(id){ $(id).classList.remove('show'); if(id==='resumePopup'){ unlockForm(); clearInterval(window._resumeTimer); } }
+function unlockForm(){ $('formWrap').classList.remove('locked'); state.resumeEmail=''; $('signupBtn').textContent='Create Account'; checkBtn(); clearInterval(window._resumeTimer); }
+function lockForm(){ $('formWrap').classList.add('locked'); }
+function setErr(id, msg){ const e=$(`e-${id}`); if(msg){e.textContent=msg;e.classList.add('show');$(id).classList.add('error');}else{e.classList.remove('show');$(id).classList.remove('error');}}
+function setOk(id, ok){ $(id).classList.toggle('ok', ok); }
+function setInfo(id, show){ const el=$(`i-${id}`); if(el) el.classList.toggle('show', show); }
+
+function goToOtp(email){
+  const url = `otp.html?email=${encodeURIComponent(email)}&resume=1`;
+  window.location.href = url;
+}
+
+function startResumeCountdown(email){
+  clearInterval(window._resumeTimer);
+  let sec=3;
+  $('resumeCount').textContent=`Auto-redirecting in ${sec}s...`;
+  window._resumeTimer=setInterval(()=>{
+    sec--;
+    if(sec>0){ $('resumeCount').textContent=`Auto-redirecting in ${sec}s...`; }
+    else { clearInterval(window._resumeTimer); goToOtp(email); }
+  },1000);
+}
+
+$('firstName').addEventListener('input', e=>{ const v=e.target.value.trim(); const ok=/^[A-Za-z\s'-]{2,}$/.test(v); state.firstName=ok; setErr('firstName', ok?'':'Enter valid first name'); setOk('firstName', ok); checkBtn(); });
+$('lastName').addEventListener('input', e=>{ const v=e.target.value.trim(); const ok=/^[A-Za-z\s'-]{2,}$/.test(v); state.lastName=ok; setErr('lastName', ok?'':'Enter valid last name'); setOk('lastName', ok); checkBtn(); });
+
+let uTimer; $('username').addEventListener('input', e=>{
+  let v=e.target.value.toLowerCase().replace(/\s/g,''); e.target.value=v;
+  const checkEl=$('u-check'); const okMsg=$('ok-username');
+  if(v.length<3){ setErr('username','Min 3 chars'); okMsg.classList.remove('show'); checkEl.innerHTML=''; state.username=false; state.usernameFree=false; checkBtn(); return; }
+  clearTimeout(uTimer); checkEl.innerHTML='<div class="bouncy"><span></span><span></span></div>'; okMsg.classList.remove('show');
+  uTimer=setTimeout(async ()=>{
+    const {data} = await supabaseClient.from('pingr_users').select('id,is_verified').eq('username', v).maybeSingle();
+    if(data){
+      setErr('username','This username is already in use.');
+      okMsg.classList.remove('show');
+      checkEl.innerHTML='❌';
+      state.usernameFree=false; state.username=false;
+      toast('Username taken','error');
+    } else {
+      setErr('username','');
+      okMsg.classList.add('show');
+      checkEl.innerHTML='✅';
+      state.usernameFree=true; state.username=true;
+      toast('Username available','success');
+    }
+    checkBtn();
+  },600);
+});
+
+$('countryCode').addEventListener('input', e=>{ let v=e.target.value.replace(/[^0-9]/g,''); e.target.value=v; const ok=v.length>=1 && v.length<=4; state.countryCode=ok; const name = COUNTRY_MAP[v]; if(name){ $('countryName').textContent=`+${v} → ${name}`; $('countryName').classList.add('show'); } else { $('countryName').classList.remove('show'); } setErr('countryCode', ok?'':'Enter code'); checkBtn(); });
+let pTimer; $('phone').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/[^0-9]/g,''); const v=e.target.value; if(v.length<7){ state.phone=false; return;} clearTimeout(pTimer); pTimer=setTimeout(async ()=>{ const {data} = await supabaseClient.from('pingr_users').select('id,is_verified').eq('phone_number', v).maybeSingle(); if(data){ setErr('phone','Phone number already registered.'); state.phone=false; state.phoneFree=false; toast('Phone already registered','error'); } else { setErr('phone',''); state.phone=true; state.phoneFree=true; toast('Phone available','success');} checkBtn(); },600); });
+
+let eTimer; $('email').addEventListener('input', e=>{
+  const v=e.target.value.toLowerCase().trim(); const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  if(!ok){ state.email=false; setInfo('email',false); return;}
+  clearTimeout(eTimer); eTimer=setTimeout(async ()=>{
+    const {data} = await supabaseClient.from('pingr_users').select('id,is_verified,email').eq('email', v).maybeSingle();
+    if(data){
+      if(!data.is_verified){
+        setErr('email',''); setInfo('email',true); state.email=true; state.emailFree=true; state.resumeEmail=data.email;
+        lockForm();
+        $('resumeText').textContent=`Found unverified account for ${v}. Redirecting in 3s...`;
+        $('resumePopup').classList.add('show');
+        toast('Unverified account found - resuming','info');
+        startResumeCountdown(data.email);
+      } else { setErr('email','Email address already registered.'); setInfo('email',false); state.email=false; state.emailFree=false; toast('Email already used','error'); }
+    } else { setErr('email',''); setInfo('email',false); state.email=true; state.emailFree=true; state.resumeEmail=''; $('formWrap').classList.remove('locked'); }
+    checkBtn();
+  },600);
+});
+
+$('password').addEventListener('input', e=>{ const ok=e.target.value.length>=8; state.password=ok; setErr('password', ok?'':'Min 8 characters'); checkMatch(); checkBtn(); });
+$('cpassword').addEventListener('input', ()=>{ checkMatch(); checkBtn(); });
+function checkMatch(){ const p=$('password').value, c=$('cpassword').value; const ok=p && c && p===c; state.cpassword=ok; setErr('cpassword', ok?'': 'Passwords do not match.'); }
+$('dob').addEventListener('change', e=>{
+  const dob=new Date(e.target.value); const now=new Date(); let age=now.getFullYear()-dob.getFullYear(); const m=now.getMonth()-dob.getMonth(); if(m<0||(m===0&&now.getDate()<dob.getDate())) age--;
+  if(age<14){ $('agePopup').classList.add('show'); state.dob=false; setErr('dob','Must be 14+'); if(navigator.vibrate) navigator.vibrate([20,50,20]); toast('You must be 14+','error'); }
+  else { state.dob=true; setErr('dob',''); toast('Age verified','success'); } checkBtn();
+});
+$('terms').addEventListener('change', e=>{ state.terms=e.target.checked; checkBtn(); });
+function checkBtn(){ const all = state.firstName && state.lastName && state.username && state.usernameFree && state.countryCode && state.phone && state.phoneFree && state.email && state.emailFree && state.password && state.cpassword && state.dob && state.terms; const btn=$('signupBtn'); if(all){ btn.classList.add('active'); } else { btn.classList.remove('active'); } }
+
+$('resumeBtn').addEventListener('click', ()=>{
+  const email = state.resumeEmail || $('email').value.toLowerCase().trim();
+  if(!email){ toast('No email','error'); return; }
+  clearInterval(window._resumeTimer);
+  goToOtp(email);
+});
+
+$('signupBtn').addEventListener('click', async ()=>{
+  const btn=$('signupBtn'); if(!btn.classList.contains('active')) return;
+  if(state.resumeEmail){ $('resumePopup').classList.add('show'); startResumeCountdown(state.resumeEmail); return; }
+  btn.textContent='Creating...'; btn.classList.add('loading');
+  try{
+    const username=$('username').value.toLowerCase().trim();
+    const phone=$('phone').value.trim();
+    const email=$('email').value.toLowerCase().trim();
+    const {data:byEmail} = await supabaseClient.from('pingr_users').select('id,is_verified').eq('email', email).maybeSingle();
+    if(byEmail){ if(!byEmail.is_verified){ lockForm(); $('resumeText').textContent=`Found unverified account. Redirecting...`; $('resumePopup').classList.add('show'); state.resumeEmail=email; startResumeCountdown(email); btn.textContent='Create Account'; btn.classList.remove('loading'); return; } else throw new Error('Email already registered.'); }
+    const bcryptLib = window.bcrypt || window.dcodeIO?.bcrypt; const hash = bcryptLib.hashSync($('password').value, bcryptLib.genSaltSync(10));
+    const dobVal=$('dob').value; const age = new Date().getFullYear() - new Date(dobVal).getFullYear(); const ccVal=$('countryCode').value.trim(); const cName = COUNTRY_MAP[ccVal] || '';
+    const {error} = await supabaseClient.from('pingr_users').insert({first_name:$('firstName').value.trim(),last_name:$('lastName').value.trim(),username:username,country_code:'+'+ccVal,country_name:cName,phone_number:phone,email:email,password_hash:hash,dob:dobVal,age:age,is_verified:false}).select().single();
+    if(error) throw new Error(error.message);
+    toast('Account created!','success');
+    try{ await supabaseClient.functions.invoke(PINGR_CONFIG.FUNCTIONS.SEND_OTP, { body: { email: email, to_name: $('firstName').value.trim() } }); }catch(e){}
+    setTimeout(()=>{ window.location.href=`otp.html?email=${encodeURIComponent(email)}`; }, 600);
+  }catch(err){ toast(err.message,'error'); btn.textContent='Create Account'; btn.classList.remove('loading'); }
+});
+</script>
+</body>
+</html>

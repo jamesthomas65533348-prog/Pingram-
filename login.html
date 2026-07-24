@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pingr - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/bcryptjs@2.4.3/dist/bcrypt.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--purple:#7C3AED;--blue:#3B82F6;--grad:linear-gradient(135deg,#7C3AED 0%,#3B82F6 100%);--muted:#8B8BA3;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent!important;user-select:none!important}
+input{-webkit-user-select:text!important;user-select:text!important}
+body{min-height:100vh;display:flex;justify-content:center;overflow:hidden;background: radial-gradient(120% 120% at 0% 0%, #C4B5FD 0%, transparent 50%), radial-gradient(100% 100% at 100% 0%, #93C5FD 0%, transparent 50%), linear-gradient(180deg, #F8F7FF 0%, #FFFFFF 100%);background-attachment:fixed}
+.app{width:100%;max-width:480px;min-height:100vh;background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,247,255,0.92) 100%);backdrop-filter:blur(20px);display:flex;flex-direction:column}
+#toast{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-150%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.82);backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,0.85);border-radius:18px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.1);font-size:12.5px;font-weight:600;max-width:300px;min-width:180px;line-height:1.3;transition:transform.6s cubic-bezier(0.32,0.72,0,1);pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast-text{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.header{padding:32px 24px 10px;text-align:center}
+.logo{width:56px;height:56px;background:var(--grad);border-radius:18px;display:inline-grid;place-items:center;color:white;font-weight:800;font-size:26px;box-shadow:0 10px 24px rgba(124,58,237,.25);margin:0 auto}
+.header h1{margin-top:16px;font-size:22px;font-weight:800;letter-spacing:-.4px}
+.header p{color:var(--muted);font-size:13.5px;margin-top:6px}
+.form-wrap{padding:24px 24px 30px;flex:1;animation:up.5s ease}
+@keyframes up{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.field{margin-bottom:16px}
+.label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;letter-spacing:.5px;text-transform:uppercase}
+.input-box{position:relative;display:flex;align-items:center}
+.p-input{width:100%;padding:16px 18px;background:rgba(244,242,255,0.9);border:1.6px solid transparent;border-radius:var(--r);font-size:15px;outline:none;transition:.2s}
+.p-input:focus{background:white;border-color:#A78BFA;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+.p-input.error{border-color:#EF4444;background:#FFF5F5}
+.err{font-size:11px;color:#EF4444;margin-top:6px;display:none}
+.err.show{display:block}
+.eye{position:absolute;right:14px;cursor:pointer;color:var(--muted)}
+.forgot{text-align:right;margin-top:8px}
+.forgot a{font-size:12px;color:var(--purple);font-weight:600;text-decoration:none}
+.btn{width:100%;padding:16px;background:var(--grad);color:white;border:none;border-radius:999px;font-weight:700;font-size:14px;box-shadow:0 8px 20px rgba(124,58,237,.25);transition:.2s;opacity:.4;pointer-events:none;margin-top:20px}
+.btn.active{opacity:1;pointer-events:auto}
+.btn:active{transform:scale(.97)}
+.btn.loading{opacity:.7;pointer-events:none}
+.signup-link{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
+.signup-link a{color:var(--purple);font-weight:700;text-decoration:none}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(124,58,237,.1)}
+.divider span{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div id="toast"><div style="width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(124,58,237,.12);color:#7C3AED;flex-shrink:0"><span class="material-icons-round" style="font-size:16px">info</span></div><span id="toast-text"></span></div>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">P</div>
+    <h1>Welcome back</h1>
+    <p>Login to continue to Pingr</p>
+  </div>
+
+  <div class="form-wrap">
+    <div class="field">
+      <label class="label">Email or Phone Number</label>
+      <div class="input-box"><input id="account" class="p-input" placeholder="Email or phone number" autocomplete="username"></div>
+      <div id="e-account" class="err"></div>
+    </div>
+
+    <div class="field">
+      <label class="label">Password</label>
+      <div class="input-box">
+        <input id="password" class="p-input" placeholder="Enter your password" type="password" autocomplete="current-password">
+        <span class="material-icons-round eye" id="toggleEye">visibility_off</span>
+      </div>
+      <div id="e-password" class="err"></div>
+      <div class="forgot"><a id="forgotLink">Forgot Password?</a></div>
+    </div>
+
+    <button id="loginBtn" class="btn">Login</button>
+
+    <div class="signup-link">Don't have an account? <a href="signup.html">Sign Up</a></div>
+  </div>
+</div>
+
+<script>
+const supa = supabase.createClient(PINGR_CONFIG.SUPABASE_URL, PINGR_CONFIG.SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+
+function toast(msg,type='info'){
+  const t=$('toast'), txt=$('toast-text');
+  let shortMsg = msg.length>48? msg.slice(0,45)+'...' : msg;
+  txt.textContent=shortMsg;
+  t.querySelector('.material-icons-round').textContent = type==='error'?'error':type==='success'?'check_circle':'info';
+  t.classList.add('show'); if(navigator.vibrate) navigator.vibrate(10);
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+function setErr(id, msg){ const e=$(`e-${id}`); if(msg){ e.textContent=msg; e.classList.add('show'); $(id).classList.add('error'); } else { e.classList.remove('show'); $(id)?.classList.remove('error'); } }
+
+// Auto-detect email vs phone
+function detectType(v){
+  v=v.trim().toLowerCase();
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'email';
+  if(/^[0-9]{7,15}$/.test(v.replace(/\D/g,''))) return 'phone';
+  if(v.includes('@')) return 'email_invalid';
+  return 'unknown';
+}
+
+// Session check on load
+(async ()=>{
+  const token = localStorage.getItem('pingr_session_token');
+  if(!token) return;
+  try{
+    const {data} = await supa.rpc('validate_pingr_session', { session_token: token });
+    if(data && data.length>0 && data[0].is_valid){
+      window.location.href='home.html';
+    } else {
+      localStorage.removeItem('pingr_session_token');
+      localStorage.removeItem('pingr_user_id');
+    }
+  }catch(e){}
+})();
+
+const accountEl=$('account');
+const passEl=$('password');
+const loginBtn=$('loginBtn');
+
+function checkValid(){
+  const acc = accountEl.value.trim();
+  const pwd = passEl.value;
+  const type = detectType(acc);
+  let accOk = false;
+  if(type==='email' || type==='phone') accOk=true;
+  if(acc.length>0 && type==='email_invalid') accOk=false;
+  const pwdOk = pwd.length>=1;
+  if(accOk && pwdOk) loginBtn.classList.add('active');
+  else loginBtn.classList.remove('active');
+}
+
+accountEl.addEventListener('input', ()=>{ setErr('account',''); checkValid(); });
+passEl.addEventListener('input', ()=>{ setErr('password',''); checkValid(); });
+
+$('toggleEye').addEventListener('click', function(){
+  const isPass = passEl.type==='password';
+  passEl.type = isPass?'text':'password';
+  this.textContent = isPass?'visibility':'visibility_off';
+});
+
+$('forgotLink').addEventListener('click', (e)=>{
+  e.preventDefault();
+  toast('Coming Soon','info');
+});
+
+loginBtn.addEventListener('click', async ()=>{
+  if(!loginBtn.classList.contains('active')) return;
+  const input = accountEl.value.trim();
+  const pwd = passEl.value;
+  const type = detectType(input);
+
+  if(type==='email_invalid'){ setErr('account','Enter valid email'); return; }
+  if(input==='' || pwd===''){ toast('Fill all fields','error'); return; }
+
+  loginBtn.textContent='Logging in...'; loginBtn.classList.add('loading');
+
+  try{
+    // 1. Find user by email OR phone OR username (per spec we support email/phone, but also username for convenience)
+    let query = supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name');
+    if(type==='email'){
+      query = query.eq('email', input.toLowerCase());
+    } else if(type==='phone'){
+      const cleaned = input.replace(/\D/g,'');
+      query = query.eq('phone_number', cleaned);
+    } else {
+      // fallback: try username or email
+      query = query.or(`email.eq.${input.toLowerCase()},username.eq.${input.toLowerCase()},phone_number.eq.${input}`);
+    }
+    const {data:users, error} = await query.limit(1);
+    if(error) throw new Error('Login failed. Try again.');
+    if(!users || users.length===0){
+      throw new Error('Invalid email, phone number, or password.');
+    }
+    const user = users[0];
+
+    // 2. Check verified
+    if(!user.is_verified){
+      toast('Email not verified. Resuming...','info');
+      setTimeout(()=>{ window.location.href=`otp.html?email=${encodeURIComponent(user.email)}&resume=1`; }, 800);
+      return;
+    }
+
+    // 3. Compare password hash
+    const bcryptLib = window.bcrypt || window.dcodeIO?.bcrypt;
+    const match = bcryptLib.compareSync(pwd, user.password_hash);
+    if(!match){
+      throw new Error('Invalid email, phone number, or password.');
+    }
+
+    // 4. Create session
+    const token = crypto.randomUUID() + '-' + Date.now();
+    const expiresAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+    const {error: sessErr} = await supa.from('pingr_sessions').insert({ user_id: user.id, token: token, expires_at: expiresAt });
+    if(sessErr) throw new Error('Could not create session.');
+
+    // 5. Save locally + update online status
+    localStorage.setItem('pingr_session_token', token);
+    localStorage.setItem('pingr_user_id', user.id);
+    localStorage.setItem('pingr_onboarding_done','1');
+
+    try{ await supa.rpc('update_online_status', { my_id: user.id, online: true }); }catch(e){}
+
+    toast('Welcome back!','success');
+    setTimeout(()=>{ window.location.href='home.html'; }, 600);
+
+  }catch(err){
+    toast(err.message,'error');
+    // generic shake
+    if(navigator.vibrate) navigator.vibrate([20,50,20]);
+    loginBtn.textContent='Login';
+    loginBtn.classList.remove('loading');
+    checkValid();
+  }
+});
+</script>
+</body>
+</html>
