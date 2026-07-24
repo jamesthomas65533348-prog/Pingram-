@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+<head><meta http-equiv="refresh" content="0; url=/login"></head>
+<script>
+ const token = localStorage.getItem('pingr_session_token');
+ if(token) location.href='/home';
+ else location.href='/login';
+</script>
+</html>
