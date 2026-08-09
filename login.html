@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
+(function() {
+  if (window.__playableTouchPatchInstalled) return;
+  window.__playableTouchPatchInstalled = true;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (blockedTypes[type]) {
+      if (options === undefined || options === null) {
+        options = { passive: true };
+      } else if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else {
+        options = Object.assign({}, options, { passive: true });
+      }
+    }
+    return origAdd.call(this, type, listener, options);
+  };
+})();
+</script><script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pingr - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#7C3AED">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PINGRAM">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/pingram.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/bcryptjs@2.4.3/dist/bcrypt.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--purple:#7C3AED;--blue:#3B82F6;--grad:linear-gradient(135deg,#7C3AED 0%,#3B82F6 100%);--muted:#8B8BA3;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent!important;user-select:none!important}
+input{-webkit-user-select:text!important;user-select:text!important}
+body{min-height:100vh;display:flex;justify-content:center;overflow:hidden;background: radial-gradient(120% 120% at 0% 0%, #C4B5FD 0%, transparent 50%), radial-gradient(100% 100% at 100% 0%, #93C5FD 0%, transparent 50%), linear-gradient(180deg, #F8F7FF 0%, #FFFFFF 100%);background-attachment:fixed}
+.app{width:100%;max-width:480px;min-height:100vh;background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,247,255,0.92) 100%);backdrop-filter:blur(20px);display:flex;flex-direction:column}
+#toast{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-150%);z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.82);backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,0.85);border-radius:18px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.1);font-size:12.5px;font-weight:600;max-width:300px;min-width:180px;line-height:1.3;transition:transform.6s cubic-bezier(0.32,0.72,0,1);pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast-text{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+#offlineBar{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);width:100%;max-width:480px;background:#EF4444;color:white;text-align:center;padding:10px;padding-top:calc(10px + env(safe-area-inset-top));font-size:13px;font-weight:700;z-index:9998;transition:transform .4s ease;display:flex;align-items:center;justify-content:center;gap:8px}
+#offlineBar.show{transform:translateX(-50%) translateY(0)}
+.header{padding:32px 24px 10px;text-align:center}
+.logo{width:64px;height:64px;border-radius:18px;overflow:hidden;display:inline-grid;place-items:center;background:white;border:1px solid rgba(124,58,237,.12);box-shadow:0 10px 24px rgba(124,58,237,.25);margin:0 auto}
+.logo img{width:100%;height:100%;object-fit:cover}
+.header h1{margin-top:16px;font-size:22px;font-weight:800;letter-spacing:-.4px}
+.header p{color:var(--muted);font-size:13.5px;margin-top:6px}
+.form-wrap{padding:24px 24px 30px;flex:1;animation:up.5s ease}
+@keyframes up{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.field{margin-bottom:16px}
+.label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;letter-spacing:.5px;text-transform:uppercase}
+.input-box{position:relative;display:flex;align-items:center}
+.p-input{width:100%;padding:16px 18px;background:rgba(244,242,255,0.9);border:1.6px solid transparent;border-radius:var(--r);font-size:15px;outline:none;transition:.2s}
+.p-input:focus{background:white;border-color:#A78BFA;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+.p-input.error{border-color:#EF4444;background:#FFF5F5}
+.err{font-size:11px;color:#EF4444;margin-top:6px;display:none}
+.err.show{display:block}
+.eye{position:absolute;right:14px;cursor:pointer;color:var(--muted)}
+.forgot{text-align:right;margin-top:8px}
+.forgot a{font-size:12px;color:var(--purple);font-weight:600;text-decoration:none;cursor:pointer}
+.btn{width:100%;padding:16px;background:var(--grad);color:white;border:none;border-radius:999px;font-weight:700;font-size:14px;box-shadow:0 8px 20px rgba(124,58,237,.25);transition:.2s;opacity:.4;pointer-events:none;margin-top:20px}
+.btn.active{opacity:1;pointer-events:auto}
+.btn:active{transform:scale(.97)}
+.btn.loading{opacity:.7;pointer-events:none}
+.signup-link{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
+.signup-link a{color:var(--purple);font-weight:700;text-decoration:none}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(124,58,237,.1)}
+.divider span{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.popup{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;background:rgba(0,0,0,0);transition:all.35s ease}
+.popup.show{opacity:1;pointer-events:auto;background:rgba(20,10,50,.25);backdrop-filter:blur(20px) saturate(180%);}
+.popup-card{width:100%;max-width:480px;background:rgba(255,255,255,0.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:1px solid rgba(255,255,255,0.8);border-bottom:none;border-radius:38px 38px 0 0;padding:14px 24px 40px;transform:translateY(100%);transition:transform.55s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -20px 60px rgba(0,0,0,.18)}
+.popup.show .popup-card{transform:translateY(0)}
+.handle{width:40px;height:5px;background:rgba(0,0,0,.18);border-radius:999px;margin:0 auto 22px}
+</style>
+</head>
+<body>
+<div id="offlineBar"><span class="material-icons-round" style="font-size:18px">wifi_off</span> No internet connection</div>
+<div id="toast"><div style="width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(124,58,237,.12);color:#7C3AED;flex-shrink:0"><span class="material-icons-round" style="font-size:16px">info</span></div><span id="toast-text"></span></div>
+
+<div class="app">
+  <div class="header">
+    <div class="logo"><img src="/pingram.png" alt="PINGRAM"></div>
+    <h1>Welcome back</h1>
+    <p>Login to continue to Pingr</p>
+  </div>
+
+  <div class="form-wrap">
+    <div class="field">
+      <label class="label">Email or Phone Number</label>
+      <div class="input-box"><input id="account" class="p-input" placeholder="Email or phone number" autocomplete="username"></div>
+      <div id="e-account" class="err"></div>
+    </div>
+
+    <div class="field">
+      <label class="label">Password</label>
+      <div class="input-box">
+        <input id="password" class="p-input" placeholder="Enter your password" type="password" autocomplete="current-password">
+        <span class="material-icons-round eye" id="toggleEye">visibility_off</span>
+      </div>
+      <div id="e-password" class="err"></div>
+      <div class="forgot"><a id="forgotLink">Forgot Password?</a></div>
+    </div>
+
+    <button id="loginBtn" class="btn">Login</button>
+
+    <div class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></div>
+  </div>
+</div>
+
+<div id="forgotModal" class="popup" onclick="if(event.target.id==='forgotModal')this.classList.remove('show')">
+  <div class="popup-card" style="text-align:center">
+    <div class="handle"></div>
+    <div style="width:64px;height:64px;background:white;border:1px solid rgba(124,58,237,.12);border-radius:18px;display:inline-grid;place-items:center;margin:0 auto;overflow:hidden"><img src="/pingram.png" style="width:100%;height:100%;object-fit:cover"></div>
+    <h3 style="margin:16px 0 8px;font-size:20px;font-weight:800">Forgot Password?</h3>
+    <p style="font-size:13.5px;color:#6B7280;line-height:1.6">To recover your forgotten password please contact customer support<br><br><a href="mailto:pingrsupport1@gmail.com" style="color:#7C3AED;font-weight:700;text-decoration:none;background:rgba(124,58,237,.08);padding:8px 14px;border-radius:999px;display:inline-block">pingrsupport1@gmail.com</a></p>
+    <button onclick="document.getElementById('forgotModal').classList.remove('show')" class="btn active" style="margin-top:22px;opacity:1;pointer-events:auto">Okay, Got it</button>
+  </div>
+</div>
+
+<div id="noInternetPopup" class="popup" onclick="if(event.target.id==='noInternetPopup')this.classList.remove('show')">
+  <div class="popup-card" style="text-align:center">
+    <div class="handle"></div>
+    <div style="width:72px;height:72px;background:rgba(239,68,68,.1);border-radius:22px;display:inline-grid;place-items:center;margin:0 auto"><span class="material-icons-round" style="color:#EF4444;font-size:32px">wifi_off</span></div>
+    <h3 style="margin:16px 0 8px;font-size:20px;font-weight:800">No Internet</h3>
+    <p style="font-size:14px;color:#6B7280;line-height:1.6">No internet connection found. Please check your Wi-Fi or mobile data and try again.</p>
+    <button onclick="document.getElementById('noInternetPopup').classList.remove('show')" class="btn active" style="margin-top:20px;opacity:1;pointer-events:auto">Try Again</button>
+  </div>
+</div>
+
+<script>
+const supa = supabase.createClient(PINGR_CONFIG.SUPABASE_URL, PINGR_CONFIG.SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+
+/* === OFFLINE GUARD === */
+function isOnline(){ return navigator.onLine; }
+function showOffline(){ $('offlineBar')?.classList.add('show'); $('noInternetPopup')?.classList.add('show'); toast('No internet connection found','error'); }
+function hideOffline(){ $('offlineBar')?.classList.remove('show'); }
+window.addEventListener('offline', ()=>{ showOffline(); });
+window.addEventListener('online', ()=>{ hideOffline(); toast('Back online','success'); });
+function guardOnline(){ if(!isOnline()){ showOffline(); return false; } return true; }
+function friendlyError(err){
+  if(!isOnline()) return 'No internet connection found. Please check your connection.';
+  const msg = (err?.message||'').toLowerCase();
+  if(msg.includes('fetch')||msg.includes('network')||msg.includes('failed to fetch')||msg.includes('timeout')||msg.includes('supabase')) return 'No internet connection found. Please check your connection.';
+  return err.message||'Login failed. Try again.';
+}
+
+function toast(msg,type='info'){
+  const t=$('toast'), txt=$('toast-text');
+  let shortMsg = msg.length>48? msg.slice(0,45)+'...' : msg;
+  txt.textContent=shortMsg;
+  t.querySelector('.material-icons-round').textContent = type==='error'?'error':type==='success'?'check_circle':'info';
+  t.classList.add('show'); if(navigator.vibrate) navigator.vibrate(10);
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+function setErr(id, msg){ const e=$(`e-${id}`); if(msg){ e.textContent=msg; e.classList.add('show'); $(id).classList.add('error'); } else { e.classList.remove('show'); $(id)?.classList.remove('error'); } }
+
+function detectType(v){
+  v=v.trim().toLowerCase();
+  const cleanDigits = v.replace(/\D/g,'');
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'email';
+  if(cleanDigits.length>=7 && cleanDigits.length<=15 && /^[\d+\s-]+$/.test(v)) return 'phone';
+  if(v.includes('@')) return 'email_invalid';
+  return 'username';
+}
+
+/* PATCH 1: Session check - added offline guard + friendly redirect to /home */
+(async ()=>{
+  if(!guardOnline()) return;
+  const token = localStorage.getItem('pingr_session_token');
+  if(!token) return;
+  try{
+    const {data, error} = await supa.rpc('validate_pingr_session', { session_token: token });
+    if(error) throw error;
+    if(data && data.length>0 && data[0].is_valid){
+      window.location.replace('/home');
+    } else {
+      localStorage.removeItem('pingr_session_token');
+      localStorage.removeItem('pingr_user_id');
+    }
+  }catch(e){}
+})();
+
+const accountEl=$('account');
+const passEl=$('password');
+const loginBtn=$('loginBtn');
+
+function checkValid(){
+  const acc = accountEl.value.trim();
+  const pwd = passEl.value;
+  const type = detectType(acc);
+  let accOk = false;
+  if(type==='email' || type==='phone' || type==='username') accOk = acc.length>=3;
+  const pwdOk = pwd.length>=1;
+  if(accOk && pwdOk) loginBtn.classList.add('active');
+  else loginBtn.classList.remove('active');
+}
+
+accountEl.addEventListener('input', ()=>{ setErr('account',''); checkValid(); });
+passEl.addEventListener('input', ()=>{ setErr('password',''); checkValid(); });
+
+$('toggleEye').addEventListener('click', function(){
+  const isPass = passEl.type==='password';
+  passEl.type = isPass?'text':'password';
+  this.textContent = isPass?'visibility':'visibility_off';
+});
+
+$('forgotLink').addEventListener('click', (e)=>{
+  e.preventDefault();
+  $('forgotModal').classList.add('show');
+});
+
+let isLogging=false;
+loginBtn.addEventListener('click', async ()=>{
+  if(!loginBtn.classList.contains('active') || isLogging) return;
+  if(!guardOnline()) return;
+  const input = accountEl.value.trim();
+  const pwd = passEl.value;
+  const type = detectType(input);
+
+  if(type==='email_invalid'){ setErr('account','Enter valid email'); return; }
+  if(input==='' || pwd===''){ toast('Fill all fields','error'); return; }
+
+  isLogging=true;
+  loginBtn.textContent='Logging in...'; loginBtn.classList.add('loading');
+
+  try{
+    let users=null;
+    let error=null;
+    /* PATCH 2: Avoid .or() injection bug - do safe separate queries instead of string interpolation */
+    if(type==='email'){
+      const res = await supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name').eq('email', input.toLowerCase()).limit(1);
+      users=res.data; error=res.error;
+    } else if(type==='phone'){
+      const cleaned = input.replace(/\D/g,'');
+      const res = await supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name').eq('phone_number', cleaned).limit(1);
+      users=res.data; error=res.error;
+      if(!users || users.length===0){
+        // try with original
+        const res2 = await supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name').eq('phone_number', input).limit(1);
+        if(res2.data && res2.data.length>0){ users=res2.data; error=res2.error; }
+      }
+    } else {
+      // username
+      const res = await supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name').eq('username', input.toLowerCase()).limit(1);
+      users=res.data; error=res.error;
+      if(!users || users.length===0){
+        // fallback email
+        const res2 = await supa.from('pingr_users').select('id,email,phone_number,username,password_hash,is_verified,first_name').eq('email', input.toLowerCase()).limit(1);
+        if(res2.data && res2.data.length>0){ users=res2.data; error=res2.error; }
+      }
+    }
+
+    if(error) throw new Error('Login failed. Try again.');
+    if(!users || users.length===0){
+      throw new Error('Invalid email, phone number, or password.');
+    }
+    const user = users[0];
+
+    if(!user.is_verified){
+      toast('Email not verified. Resuming...','info');
+      setTimeout(()=>{ window.location.href=`/otp?email=${encodeURIComponent(user.email)}&resume=1`; }, 800);
+      return;
+    }
+
+    const bcryptLib = window.bcrypt || window.dcodeIO?.bcrypt;
+    let match=false;
+    try{ match = bcryptLib.compareSync(pwd, user.password_hash); }catch(e){ throw new Error('Password check failed.'); }
+    if(!match){
+      throw new Error('Invalid email, phone number, or password.');
+    }
+
+    /* PATCH 3: crypto.randomUUID fails on HTTP - add fallback */
+    let token;
+    try{ token = (crypto.randomUUID? crypto.randomUUID() : 'tok_'+Date.now()+'_'+Math.random().toString(36).slice(2)) + '-' + Date.now(); }
+    catch(e){ token = 'tok_'+Date.now()+'_'+Math.random().toString(36).slice(2); }
+
+    const expiresAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+    const {error: sessErr} = await supa.from('pingr_sessions').insert({ user_id: user.id, token: token, expires_at: expiresAt });
+    if(sessErr) throw new Error('Could not create session.');
+
+    localStorage.setItem('pingr_session_token', token);
+    localStorage.setItem('pingr_user_id', user.id);
+    localStorage.setItem('pingr_onboarding_done','1');
+
+    try{ await supa.rpc('update_online_status', { my_id: user.id, online: true }); }catch(e){}
+
+    toast('Welcome back!','success');
+    setTimeout(()=>{ window.location.href='/home'; }, 600);
+
+  }catch(err){
+    toast(friendlyError(err),'error');
+    if(navigator.vibrate) navigator.vibrate([20,50,20]);
+    loginBtn.textContent='Login';
+    loginBtn.classList.remove('loading');
+    checkValid();
+  } finally {
+    isLogging=false;
+    loginBtn.textContent='Login';
+    loginBtn.classList.remove('loading');
+  }
+});
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js'); }
+if(!isOnline()) $('offlineBar').classList.add('show');
+</script>
+</body>
+</html>

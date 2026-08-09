@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
+(function() {
+  if (window.__playableTouchPatchInstalled) return;
+  window.__playableTouchPatchInstalled = true;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (blockedTypes[type]) {
+      if (options === undefined || options === null) {
+        options = { passive: true };
+      } else if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else {
+        options = Object.assign({}, options, { passive: true });
+      }
+    }
+    return origAdd.call(this, type, listener, options);
+  };
+})();
+</script><script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pingr - Welcome</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#7C3AED">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PINGRAM">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/pingram.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+:root{--purple:#7C3AED;--blue:#3B82F6;--grad:linear-gradient(135deg,#7C3AED 0%,#3B82F6 100%)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent!important;user-select:none!important}
+body{min-height:100vh;display:flex;justify-content:center;overflow:hidden;background: radial-gradient(120% 120% at 0% 0%, #C4B5FD 0%, transparent 50%), radial-gradient(100% 100% at 100% 0%, #93C5FD 0%, transparent 50%), linear-gradient(180deg, #F8F7FF 0%, #FFFFFF 100%)}
+.app{width:100%;max-width:480px;min-height:100vh;background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,247,255,0.94) 100%);backdrop-filter:blur(20px);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.top{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.logo{width:44px;height:44px;border-radius:12px;overflow:hidden;background:white;border:1px solid rgba(124,58,237,.12);display:grid;place-items:center;box-shadow:0 8px 20px rgba(124,58,237,.18)}
+.logo img{width:100%;height:100%;object-fit:cover}
+.skip{font-size:14px;font-weight:600;color:#8B8BA3;background:rgba(244,242,255,.8);border:1px solid rgba(124,58,237,.08);padding:8px 16px;border-radius:999px;cursor:pointer;transition:.2s}
+.skip:active{transform:scale(.95)}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 28px 0;transform:translateX(100%);opacity:0;transition:all.55s cubic-bezier(0.32,0.72,0,1);pointer-events:none}
+.slide.active{transform:translateX(0);opacity:1;pointer-events:auto}
+.slide.prev{transform:translateX(-100%);opacity:0}
+.illustration{width:220px;height:220px;background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(244,242,255,0.7) 100%);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.8);border-radius:32px;display:grid;place-items:center;box-shadow:0 20px 50px rgba(124,58,237,.12), 0 0 0 1px rgba(124,58,237,.05) inset;margin-bottom:28px;position:relative;overflow:hidden}
+.illustration::before{content:'';position:absolute;inset:0;background: radial-gradient(100% 100% at 50% 0%, rgba(124,58,237,.15), transparent 70%)}
+.ill-icon{width:90px;height:90px;background:var(--grad);border-radius:22px;display:grid;place-items:center;color:white;font-size:42px;box-shadow:0 12px 30px rgba(124,58,237,.25);animation:float 3s ease-in-out infinite;position:relative;z-index:1}
+.ill-logo{width:110px;height:110px;border-radius:24px;overflow:hidden;background:white;border:1px solid rgba(124,58,237,.12);box-shadow:0 12px 30px rgba(124,58,237,.25);animation:float 3s ease-in-out infinite;position:relative;z-index:1}
+.ill-logo img{width:100%;height:100%;object-fit:cover}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.slide h2{font-size:26px;font-weight:800;letter-spacing:-.6px;text-align:center;line-height:1.15;color:#111}
+.slide p{font-size:14px;color:#6B7280;text-align:center;line-height:1.6;margin-top:12px;max-width:300px}
+.bottom{padding:20px 24px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+.dots{display:flex;gap:8px;justify-content:center;align-items:center}
+.dot{width:8px;height:8px;border-radius:999px;background:rgba(124,58,237,.15);transition:all.4s cubic-bezier(0.32,0.72,0,1)}
+.dot.active{width:24px;background:var(--grad);box-shadow:0 4px 12px rgba(124,58,237,.25)}
+.btn{width:100%;padding:17px;background:var(--grad);color:white;border:none;border-radius:999px;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(124,58,237,.28);transition:all.2s;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.97)}
+.progress-bar{height:3px;background:rgba(244,242,255,.8);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;width:33.33%;background:var(--grad);transition:width.55s cubic-bezier(0.32,0.72,0,1)}
+#offlineBar{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);width:100%;max-width:480px;background:#EF4444;color:white;text-align:center;padding:10px;padding-top:calc(10px + env(safe-area-inset-top));font-size:13px;font-weight:700;z-index:9998;transition:transform .4s ease;display:flex;align-items:center;justify-content:center;gap:8px}
+#offlineBar.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="offlineBar"><span class="material-icons-round" style="font-size:18px">wifi_off</span> Offline mode</div>
+<div class="app">
+  <div class="top">
+    <div class="logo"><img src="/pingram.png" alt="PINGRAM"></div>
+    <button class="skip" id="skipBtn">Skip</button>
+  </div>
+
+  <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+
+  <div class="slides" id="slides">
+    <!-- Slide 1 -->
+    <div class="slide active" data-index="0">
+      <div class="illustration"><div class="ill-logo"><img src="/pingram.png" alt="logo"></div></div>
+      <h2>Welcome to Pingr</h2>
+      <p>Fast, secure, and modern messaging built to keep you connected with friends and family through beautiful real-time conversations.</p>
+    </div>
+    <!-- Slide 2 -->
+    <div class="slide" data-index="1">
+      <div class="illustration"><div class="ill-icon" style="background:linear-gradient(135deg,#3B82F6,#7C3AED)"><span class="material-icons-round">search</span></div></div>
+      <h2>Find Friends Easily</h2>
+      <p>Search by unique username or phone number. Discover people you know and start chatting instantly — no complicated steps.</p>
+    </div>
+    <!-- Slide 3 -->
+    <div class="slide" data-index="2">
+      <div class="illustration"><div class="ill-icon" style="background:linear-gradient(135deg,#10B981,#3B82F6)"><span class="material-icons-round">chat_bubble</span></div></div>
+      <h2>Powerful Messaging</h2>
+      <p>Real-time chat, image sharing, saved messages, privacy controls, blocking, and smooth animations — all in a premium design.</p>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="dots" id="dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
+    <button class="btn" id="nextBtn">Next <span class="material-icons-round" style="font-size:18px">arrow_forward</span></button>
+  </div>
+</div>
+
+<script>
+/* === OFFLINE GUARD === */
+function isOnline(){ return navigator.onLine; }
+const offlineBar = document.getElementById('offlineBar');
+window.addEventListener('offline', ()=> offlineBar?.classList.add('show'));
+window.addEventListener('online', ()=> offlineBar?.classList.remove('show'));
+if(!isOnline()) offlineBar?.classList.add('show');
+
+let supa=null;
+try{ if(window.supabase) supa = supabase.createClient(PINGR_CONFIG.SUPABASE_URL, PINGR_CONFIG.SUPABASE_ANON_KEY); }catch(e){}
+
+/* PATCH 1: safe uid handling - prevents crash if URL has no uid */
+const params = new URLSearchParams(location.search);
+let uid = params.get('uid');
+try{
+  if(uid) localStorage.setItem('pingr_onboarding_uid', uid);
+  else uid = localStorage.getItem('pingr_onboarding_uid') || '';
+}catch(e){ uid=''; }
+
+/* PATCH 2: onboarding done check - use clean URL /login not login.html */
+if(localStorage.getItem('pingr_onboarding_done')==='1'){
+  // Allow user to still see if they came with ?uid fresh signup
+  if(!params.get('uid')){
+    window.location.replace('/login');
+  }
+}
+
+let current=0;
+const slides=document.querySelectorAll('.slide');
+const dots=document.querySelectorAll('.dot');
+const progress=document.getElementById('progress');
+const nextBtn=document.getElementById('nextBtn');
+const skipBtn=document.getElementById('skipBtn');
+const container=document.getElementById('slides');
+
+function updateUI(){
+  slides.forEach((s,i)=>{
+    s.classList.remove('active','prev');
+    if(i===current) s.classList.add('active');
+    else if(i<current) s.classList.add('prev');
+  });
+  dots.forEach((d,i)=>d.classList.toggle('active', i===current));
+  progress.style.width = `${((current+1)/3)*100}%`;
+  if(current===2){
+    nextBtn.innerHTML=`Get Started <span class="material-icons-round" style="font-size:18px">rocket_launch</span>`;
+  } else {
+    nextBtn.innerHTML=`Next <span class="material-icons-round" style="font-size:18px">arrow_forward</span>`;
+  }
+}
+
+function goNext(){
+  if(current<2){ current++; updateUI(); if(navigator.vibrate) navigator.vibrate(10); }
+  else { complete(); }
+}
+function goPrev(){ if(current>0){ current--; updateUI(); } }
+
+/* PATCH 3: complete() was trying supa.raw and bio update that crashes if column missing or RLS blocks */
+async function complete(){
+  try{ localStorage.setItem('pingr_onboarding_done','1'); }catch(e){}
+  // No Supabase write needed - local flag is source of truth. Prevents future RLS / schema errors.
+  nextBtn.innerHTML=`Starting...`;
+  nextBtn.disabled=true;
+  setTimeout(()=>{ window.location.href='/login'; }, 400);
+}
+
+nextBtn.addEventListener('click', goNext);
+skipBtn.addEventListener('click', complete);
+
+// Swipe support
+let startX=0, currentX=0, isDragging=false;
+container.addEventListener('touchstart', e=>{ startX=e.touches[0].clientX; isDragging=true; }, {passive:true});
+container.addEventListener('touchmove', e=>{ if(!isDragging) return; currentX=e.touches[0].clientX; }, {passive:true});
+container.addEventListener('touchend', ()=>{
+  if(!isDragging) return;
+  const diff = startX - currentX;
+  if(Math.abs(diff)>50){
+    if(diff>0) goNext();
+    else goPrev();
+  }
+  isDragging=false;
+});
+
+// Keyboard for desktop
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') goNext();
+  if(e.key==='ArrowLeft') goPrev();
+  if(e.key==='Escape') complete();
+});
+
+updateUI();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js'); }
+</script>
+</body>
+</html>
